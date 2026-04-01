@@ -1,0 +1,467 @@
+openapi: 3.0.0
+info:
+  title: Open Foliant API
+  description: Base foliant endpoints for creating your apps
+  version: 1.0.0
+  contact:
+    name: Foliant
+    email: brusnow.project@gmail.com
+    url: https://github.com/FoliantMc
+servers:
+  - url: https://apifoliant.karpen.dev
+    description: Main server
+
+paths:
+  /api/health:
+    get:
+      summary: Check server status
+      description: Return api status
+      tags:
+        - Health
+      responses:
+        '200':
+          description: Success, server is work
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+              example:
+                success: true
+                message: "Server is running"
+                timestamp: "2024-01-15T10:30:00.000Z"
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                message: "Internal server error"
+                timestamp: "2024-01-15T10:30:00.000Z"
+                error: "Database connection failed"
+
+  /api/public/profile:
+    get:
+      summary: Get player public profile
+      description: Returns public profile data for a specific user
+      tags:
+        - Public profile
+
+      parameters:
+        - name: userId
+          in: query
+          required: true
+          description: Public user ID
+          schema:
+            type: integer
+            minimum: 1
+            example: 1
+
+      responses:
+        '200':
+          description: Success - profile data retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicProfileResponse'
+              example:
+                success: true
+                data:
+                  id: 1
+                  name: "karpen"
+                  rpName: "karpen"
+                  playerSkills:
+                    farmer_skill_level: 0
+                    miner_skill_level: 0
+                    wood_cutter_skill_level: 0
+                    pvp_skill_level: 0
+                  enabledGradient:
+                    id: "flaming_lava"
+                    name: "Пылающая лава"
+                    colors: [ "#FC766A", "#5B84B1" ]
+                  enabledBadge:
+                    icon: ""
+                    name: "Без значка"
+                    id: "default"
+                  availableGradients: [ ]
+                  availableBadges: [ ]
+                  availableParticles: [ ]
+
+        '400':
+          description: Bad request - invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                message: "Invalid userId parameter. Must be a positive integer"
+
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                message: "User with ID 1 not found"
+
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                message: "Error getting public profile"
+
+  /api/mods/all:
+    get:
+      summary: Get all mods list
+      description: Returns a list of all available mods with their approval status
+      tags:
+        - Mods
+
+      parameters:
+        - name: approved
+          in: query
+          required: false
+          description: Filter mods by approval status
+          schema:
+            type: boolean
+            example: true
+
+      responses:
+        '200':
+          description: Success - mods list retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ModsListResponse'
+              examples:
+                allMods:
+                  summary: All mods
+                  value:
+                    success: true
+                    data: [ ]
+                approvedOnly:
+                  summary: Only approved mods
+                  value:
+                    success: true
+                    data: [ ]
+
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                message: "Error getting mods list"
+
+  /api/reviews/all:
+    get:
+      summary: Get all reviews
+      description: Returns a list of all player reviews and testimonials about the server
+      tags:
+        - Reviews
+
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          description: Maximum number of reviews to return
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+          example: 20
+
+      responses:
+        '200':
+          description: Success - reviews list retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReviewsListResponse'
+              example:
+                success: true
+                data:
+                  - name: "MrFonax"
+                    avatarurl: "https://minotar.net/avatar/MrFonax"
+                    description: "Cервер - самый комфортный из всех на которых я играл..."
+                  - name: "_Westler_"
+                    avatarurl: "https://minotar.net/avatar/_Westler_"
+                    description: "Сервер который подарил незабываемые эмоции..."
+
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                message: "Error getting reviews"
+
+components:
+  schemas:
+    ModsListResponse:
+      type: object
+      required:
+        - success
+        - data
+      properties:
+        success:
+          type: boolean
+          description: Request status
+          example: true
+        data:
+          type: array
+          description: List of mods
+          items:
+            $ref: '#/components/schemas/Mod'
+
+    Mod:
+      type: object
+      required:
+        - name
+        - approved
+      properties:
+        name:
+          type: string
+          description: Mod name
+          example: "Sodium"
+        description:
+          type: string
+          nullable: true
+          description: Mod description or download link
+          example: "https://modrinth.com/mod/sodium"
+        approved:
+          type: boolean
+          description: Whether the mod is approved for use
+          example: true
+
+    ReviewsListResponse:
+      type: object
+      required:
+        - success
+        - data
+      properties:
+        success:
+          type: boolean
+          description: Request status
+          example: true
+        data:
+          type: array
+          description: List of player reviews
+          items:
+            $ref: '#/components/schemas/Review'
+
+    Review:
+      type: object
+      required:
+        - name
+        - avatarurl
+        - description
+      properties:
+        name:
+          type: string
+          description: Player username
+          example: "MrFonax"
+        avatarurl:
+          type: string
+          format: uri
+          description: URL to player's avatar image
+          example: "https://minotar.net/avatar/MrFonax"
+        description:
+          type: string
+          description: Review text content
+          example: "Сервер - самый комфортный из всех на которых я играл..."
+
+    PublicProfileResponse:
+      type: object
+      required:
+        - success
+        - data
+      properties:
+        success:
+          type: boolean
+          description: Request status
+          example: true
+        data:
+          type: object
+          required:
+            - id
+            - name
+            - rpName
+            - playerSkills
+            - enabledGradient
+            - enabledBadge
+            - availableGradients
+            - availableBadges
+            - availableParticles
+          properties:
+            id:
+              type: integer
+              description: User ID
+              example: 1
+            name:
+              type: string
+              description: Username
+              example: "karpen"
+            rpName:
+              type: string
+              description: Display name
+              example: "karpen"
+            playerSkills:
+              $ref: '#/components/schemas/PlayerSkills'
+            enabledGradient:
+              $ref: '#/components/schemas/Gradient'
+            enabledBadge:
+              $ref: '#/components/schemas/Badge'
+            availableGradients:
+              type: array
+              description: List of available gradients for the user
+              items:
+                $ref: '#/components/schemas/Gradient'
+            availableBadges:
+              type: array
+              description: List of available badges for the user
+              items:
+                $ref: '#/components/schemas/Badge'
+            availableParticles:
+              type: array
+              description: List of available particles for the user
+              items:
+                $ref: '#/components/schemas/Particle'
+
+    PlayerSkills:
+      type: object
+      properties:
+        farmer_skill_level:
+          type: integer
+          minimum: 0
+          description: Farmer skill level
+          example: 0
+        miner_skill_level:
+          type: integer
+          minimum: 0
+          description: Miner skill level
+          example: 0
+        wood_cutter_skill_level:
+          type: integer
+          minimum: 0
+          description: Wood cutter skill level
+          example: 0
+        pvp_skill_level:
+          type: integer
+          minimum: 0
+          description: PVP skill level
+          example: 0
+
+    Gradient:
+      type: object
+      required:
+        - id
+        - name
+        - colors
+      properties:
+        id:
+          type: string
+          description: Unique gradient identifier
+          example: "flaming_lava"
+        name:
+          type: string
+          description: Display name of the gradient
+          example: "Пылающая лава"
+        colors:
+          type: array
+          description: Array of hex color codes
+          minItems: 2
+          items:
+            type: string
+            pattern: '^#[0-9A-Fa-f]{6}$'
+            example: "#FC766A"
+
+    Badge:
+      type: object
+      required:
+        - id
+        - name
+      properties:
+        id:
+          type: string
+          description: Unique badge identifier
+          example: "default"
+        name:
+          type: string
+          description: Display name of the badge
+          example: "Без значка"
+        icon:
+          type: string
+          description: Icon character or emoji
+          example: "♥"
+
+    Particle:
+      type: object
+      required:
+        - id
+        - name
+      properties:
+        id:
+          type: string
+          description: Unique particle identifier
+          example: "cherry"
+        name:
+          type: string
+          description: Display name of the particle effect
+          example: "🌸 Падающая сакура"
+
+    HealthResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          description: Request status
+          example: true
+        message:
+          type: string
+          description: Server status
+          example: "Server is running"
+        timestamp:
+          type: string
+          format: date-time
+          description: Response time
+          example: "2024-01-15T10:30:00.000Z"
+      required:
+        - success
+        - message
+        - timestamp
+
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+          description: Error message
+          example: "Something went wrong"
+        timestamp:
+          type: string
+          format: date-time
+        error:
+          type: string
+          description: Error details (optional)
+          example: "Database connection timeout"
+      required:
+        - success
+        - message
+        - timestamp
