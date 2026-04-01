@@ -1,9 +1,10 @@
-name: Generate and Deploy API Docs
+name: Generate and Deploy Swagger UI
 
 on:
   push:
     branches:
       - master
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -15,7 +16,7 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  build-and-deploy:
+  generate-and-deploy:
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
@@ -26,21 +27,12 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Generate Swagger UI
+        uses: Legion2/swagger-ui-action@v1
         with:
-          node-version: '18'
-
-      - name: Install Redoc CLI
-        run: npm install -g @redocly/cli
-
-      - name: Generate HTML from OpenAPI
-        run: |
-          # Генерация документации с помощью Redoc
-          npx @redocly/cli build-docs openapi.yaml \
-            --output index.html \
-            --title "API Documentation" \
-            --template html
+          output: swagger-ui
+          spec-file: openapi.yaml
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
@@ -48,7 +40,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: '.'
+          path: swagger-ui
 
       - name: Deploy to GitHub Pages
         id: deployment
