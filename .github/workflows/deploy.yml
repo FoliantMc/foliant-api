@@ -3,7 +3,7 @@ name: Generate and Deploy API Docs
 on:
   push:
     branches:
-      - main
+      - master
     paths:
       - 'openapi.yaml'
 
